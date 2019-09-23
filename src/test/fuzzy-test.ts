@@ -5,7 +5,7 @@ import { generateRandomNode } from "./utils";
 describe(__filename + "#", () => {
 
   Array
-    .from({ length: 100 })
+    .from({ length: 200 })
     .map(() => [
       generateRandomNode(5, 7, 5), 
       generateRandomNode(5, 7, 5)
