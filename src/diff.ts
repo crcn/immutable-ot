@@ -131,7 +131,7 @@ const diffObject = (
       oldValue != null
     ) {
       diff2(oldValue, newValue, [...path, key], operations);
-    } else if (newValue == null) {
+    } else if (newValue == null && oldValue != null) {
       operations.push(unset(key, path));
     }
   }
