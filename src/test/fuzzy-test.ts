@@ -5,10 +5,10 @@ import { generateRandomNode } from "./utils";
 describe(__filename + "#", () => {
 
   Array
-    .from({ length: 200 })
+    .from({ length: 100 })
     .map(() => [
-      generateRandomNode(5, 7, 5), 
-      generateRandomNode(5, 7, 5)
+      generateRandomNode(5, 5, 5), 
+      generateRandomNode(5, 5, 5)
     ])
     .forEach(([a, b]) => {
       it(`Can diff & patch ${JSON.stringify(a)} to ${JSON.stringify(b)}`,  () => {

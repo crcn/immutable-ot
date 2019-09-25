@@ -23,14 +23,12 @@ const diff2 = (
   }
 
   if (
-    typeof oldItem !== typeof newItem ||
-    (!oldItem || typeof oldItem !== "object")
-  ) {
+    !oldItem || typeof oldItem !== "object" || oldItem.constructor !== newItem.constructor)
+   {
     if (oldItem !== newItem) {
       operations.push(replace(newItem, path));
     }
-  }
-  if (Array.isArray(oldItem)) {
+  } else if (Array.isArray(oldItem)) {
     diffArray(oldItem, newItem, path, operations);
   } else if (typeof oldItem === "object") {
     diffObject(oldItem, newItem, path, operations);
@@ -138,6 +136,9 @@ const diffObject = (
 
   for (const key in newItem) {
     const newValue = newItem[key];
+    if (!newItem.hasOwnProperty(key)) {
+      continue;
+    }
     const oldValue = oldItem[key];
     if (
       newValue != null &&
