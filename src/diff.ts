@@ -9,14 +9,51 @@ import {
   unset
 } from "./mutations";
 
-export const diff = (oldItem: any, newItem: any) =>
-  diff2(oldItem, newItem, [], []);
+type Iterator = (value: any, key: any) => any;
+
+export type Adapter = {
+  isList(object): boolean,
+  isMap(object): boolean,
+  each(object, iterate: Iterator);
+}
+
+type DiffOptions = {
+  adapter: Adapter
+};
+
+const DEFAULT_OPTIONS = {
+  adapter: {
+    isList: object => Array.isArray(object),
+    isMap: object => object && object.constructor === Object,
+    each: (object, iterate) => {
+      if (Array.isArray(object)) {
+        for (let i = 0, n = object.length; i < n; i++) {
+          if (iterate(object[i], i) === false) {
+            break;
+          }
+        }
+      } else {
+        for (const key in object) {
+          if (object.hasOwnProperty(key)) {
+            if (iterate(object[key], key) === false) {
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+export const diff = (oldItem: any, newItem: any, options: DiffOptions = DEFAULT_OPTIONS) =>
+  diff2(oldItem, newItem, [], [], options);
 
 const diff2 = (
   oldItem: any,
   newItem: any,
   path: Key[],
-  operations: Mutation[]
+  operations: Mutation[],
+  options: DiffOptions
 ) => {
   if (oldItem === newItem) {
     return operations;
@@ -28,10 +65,10 @@ const diff2 = (
     if (oldItem !== newItem) {
       operations.push(replace(newItem, path));
     }
-  } else if (Array.isArray(oldItem)) {
-    diffArray(oldItem, newItem, path, operations);
-  } else if (typeof oldItem === "object") {
-    diffObject(oldItem, newItem, path, operations);
+  } else if (options.adapter.isList(oldItem)) {
+    diffArray(oldItem, newItem, path, operations, options);
+  } else if (options.adapter.isMap(oldItem)) {
+    diffObject(oldItem, newItem, path, operations, options);
   }
 
   return operations;
@@ -41,28 +78,29 @@ const diffArray = (
   oldArray: any[],
   newArray: any[],
   path: Key[],
-  operations: Mutation[]
+  operations: Mutation[],
+  options: DiffOptions
 ) => {
+  const { adapter: { each }} = options;
   const model = oldArray.concat();
 
   let used = {};
   let inserted = false;
 
-  // insert, update, move
-  for (let i = 0, n = newArray.length; i < n; i++) {
-    const newItem = newArray[i];
+  each(newArray, (newItem, i) => {
+
     let oldItem;
-    for (let j = 0, n2 = oldArray.length; j < n2; j++) {
+
+    each(oldArray, (item, j) => {
       if (used[j]) {
-        continue;
+        return;
       }
-      const item = oldArray[j];
       if (newItem === item) {
         oldItem = item;
         used[j] = true;
-        break;
+        return false;
       }
-    }
+    });
 
     if (i >= oldArray.length) {
       model.splice(i, 0, newItem);
@@ -73,18 +111,20 @@ const diffArray = (
 
       let existing;
       let existingIndex;
-      for (let k = i, n = newArray.length; k < n; k++) {
-        const item = newArray[k];
+      each(newArray, (item, k) => {
+        if (k < i) {
+          return;
+        }
         if (replItem === item) {
           existing = replItem;
           existingIndex = k;
-          break;
+          return false;
         }
-      }
+      });
 
       if (existing == null) {
         model.splice(existingIndex, 1, newItem);
-        diff2(replItem, newItem, [...path, i], operations);
+        diff2(replItem, newItem, [...path, i], operations, options);
       } else {
         model.splice(i, 0, newItem);
         inserted = true;
@@ -100,9 +140,9 @@ const diffArray = (
         operations.push(move(oldIndex, i, path));
       }
 
-      diff2(oldItem, newItem, [...path, i], operations);
+      diff2(oldItem, newItem, [...path, i], operations, options);
     }
-  }
+  });
 
   // delete
   const lastNewArrayIndex = newArray.length;
@@ -117,28 +157,25 @@ const diffObject = (
   oldItem: any,
   newItem: any,
   path: Key[],
-  operations: Mutation[]
+  operations: Mutation[],
+  options: DiffOptions
 ) => {
-  for (const key in oldItem) {
+  const {adapter:{each}} = options;
+  each(oldItem, (oldValue, key) => {
     const newValue = newItem[key];
-    const oldValue = oldItem[key];
     if (
       typeof newValue === typeof oldValue &&
       typeof newValue === "object" &&
       newValue != null &&
       oldValue != null
     ) {
-      diff2(oldValue, newValue, [...path, key], operations);
+      diff2(oldValue, newValue, [...path, key], operations, options);
     } else if (newValue == null && oldValue != null) {
       operations.push(unset(key, path));
     }
-  }
+  });
 
-  for (const key in newItem) {
-    const newValue = newItem[key];
-    if (!newItem.hasOwnProperty(key)) {
-      continue;
-    }
+  each(newItem, (newValue, key) => {
     const oldValue = oldItem[key];
     if (
       newValue != null &&
@@ -147,7 +184,5 @@ const diffObject = (
     ) {
       operations.push(set(key, newValue, path));
     }
-  }
-
-  return operations;
+  });
 };
