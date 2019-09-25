@@ -21,23 +21,21 @@ type DiffOptions = {
   adapter: Adapter
 };
 
-const DEFAULT_OPTIONS = {
-  adapter: {
-    isList: object => Array.isArray(object),
-    isMap: object => object && object.constructor === Object,
-    each: (object, iterate) => {
-      if (Array.isArray(object)) {
-        for (let i = 0, n = object.length; i < n; i++) {
-          if (iterate(object[i], i) === false) {
-            break;
-          }
+export const defaultAdapter = {
+  isList: object => Array.isArray(object),
+  isMap: object => object && object.constructor === Object,
+  each: (object, iterate) => {
+    if (Array.isArray(object)) {
+      for (let i = 0, n = object.length; i < n; i++) {
+        if (iterate(object[i], i) === false) {
+          break;
         }
-      } else {
-        for (const key in object) {
-          if (object.hasOwnProperty(key)) {
-            if (iterate(object[key], key) === false) {
-              break;
-            }
+      }
+    } else {
+      for (const key in object) {
+        if (object.hasOwnProperty(key)) {
+          if (iterate(object[key], key) === false) {
+            break;
           }
         }
       }
@@ -45,8 +43,13 @@ const DEFAULT_OPTIONS = {
   }
 };
 
-export const diff = (oldItem: any, newItem: any, options: DiffOptions = DEFAULT_OPTIONS) =>
-  diff2(oldItem, newItem, [], [], options);
+const DEFAULT_OPTIONS = {
+  adapter: defaultAdapter
+};
+
+export const diff = (oldItem: any, newItem: any, options: DiffOptions = DEFAULT_OPTIONS) => {
+  return diff2(oldItem, newItem, [], [], options);
+}
 
 const diff2 = (
   oldItem: any,
