@@ -1,12 +1,23 @@
 import { Mutation, MutationType } from "./mutations";
 import { getValue, arraySplice, setValue } from "./utils";
 
-export const patch = <TValue>(oldValue: TValue, mutations: Mutation[]) => {
+
+type PatchAdapter = {
+  getDeepValue(object, path: any[]): any;
+  setDeepValue(value, path: any[], object): any;
+};
+
+const defaultPatchAdapter = {
+  getDeepValue: getValue,
+  setDeepValue: setValue,
+}
+
+export const patch = <TValue>(oldValue: TValue, mutations: Mutation[], {getDeepValue, setDeepValue}: PatchAdapter = defaultPatchAdapter) => {
   let newValue = oldValue;
 
   for (let i = 0, n = mutations.length; i < n; i++) {
     const mutation = mutations[i];
-    let target = getValue(newValue, mutation.path);
+    let target = getDeepValue(newValue, mutation.path);
 
     switch (mutation.type) {
       case MutationType.INSERT: {
@@ -38,7 +49,7 @@ export const patch = <TValue>(oldValue: TValue, mutations: Mutation[]) => {
       }
     }
 
-    newValue = setValue(newValue, target, mutation.path);
+    newValue = setDeepValue(newValue, target, mutation.path);
   }
 
   return newValue;

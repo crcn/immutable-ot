@@ -15,6 +15,7 @@ export type Adapter = {
   isList(object): boolean,
   isMap(object): boolean,
   each(object, iterate: Iterator);
+  get(object, key): any;
 }
 
 type DiffOptions = {
@@ -40,7 +41,8 @@ export const defaultAdapter = {
         }
       }
     }
-  }
+  },
+  get: (object, key) => object[key],
 };
 
 const DEFAULT_OPTIONS = {
@@ -84,11 +86,10 @@ const diffArray = (
   operations: Mutation[],
   options: DiffOptions
 ) => {
-  const { adapter: { each }} = options;
+  const { adapter: { each, get }} = options;
   const model = oldArray.concat();
 
   let used = {};
-  let inserted = false;
 
   each(newArray, (newItem, i) => {
 
@@ -110,7 +111,7 @@ const diffArray = (
       operations.push(insert(i, newItem, path));
       // does not exist
     } else if (oldItem == null) {
-      const replItem = oldArray[i];
+      const replItem = get(oldArray, i);
 
       let existing;
       let existingIndex;
@@ -130,7 +131,6 @@ const diffArray = (
         diff2(replItem, newItem, [...path, i], operations, options);
       } else {
         model.splice(i, 0, newItem);
-        inserted = true;
         operations.push(insert(i, newItem, path));
       }
 
@@ -163,9 +163,9 @@ const diffObject = (
   operations: Mutation[],
   options: DiffOptions
 ) => {
-  const {adapter:{each}} = options;
+  const {adapter:{each, get}} = options;
   each(oldItem, (oldValue, key) => {
-    const newValue = newItem[key];
+    const newValue = get(newItem, key);
     if (
       typeof newValue === typeof oldValue &&
       typeof newValue === "object" &&
@@ -179,7 +179,7 @@ const diffObject = (
   });
 
   each(newItem, (newValue, key) => {
-    const oldValue = oldItem[key];
+    const oldValue = get(oldItem, key);
     if (
       newValue != null &&
       newValue !== oldValue &&
