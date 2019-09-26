@@ -16,6 +16,7 @@ export type Adapter = {
   isMap(object): boolean,
   each(object, iterate: Iterator);
   get(object, key): any;
+  getListLength(object): number;
 }
 
 type DiffOptions = {
@@ -43,6 +44,7 @@ export const defaultAdapter = {
     }
   },
   get: (object, key) => object[key],
+  getListLength: (object) => object.length,
 };
 
 const DEFAULT_OPTIONS = {
@@ -86,8 +88,9 @@ const diffArray = (
   operations: Mutation[],
   options: DiffOptions
 ) => {
-  const { adapter: { each, get }} = options;
+  const { adapter: { each, get, getListLength }} = options;
   const model = oldArray.concat();
+  const oldListLength = getListLength(oldArray);
 
   let used = {};
 
@@ -106,7 +109,7 @@ const diffArray = (
       }
     });
 
-    if (i >= oldArray.length) {
+    if (i >= oldListLength) {
       model.splice(i, 0, newItem);
       operations.push(insert(i, newItem, path));
       // does not exist
@@ -148,7 +151,7 @@ const diffArray = (
   });
 
   // delete
-  const lastNewArrayIndex = newArray.length;
+  const lastNewArrayIndex = getListLength(newArray);
   for (let j = lastNewArrayIndex, { length } = model; j < length; j++) {
     operations.push(remove(lastNewArrayIndex, path));
   }
