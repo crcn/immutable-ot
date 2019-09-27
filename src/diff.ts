@@ -89,7 +89,7 @@ const diffArray = (
   options: DiffOptions
 ) => {
   const { adapter: { each, get, getListLength }} = options;
-  const model = oldArray.concat();
+  const model = [...oldArray];
   const oldListLength = getListLength(oldArray);
 
   let used = {};
