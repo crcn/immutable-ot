@@ -14,8 +14,9 @@ type Iterator = (value: any, key: any) => any;
 export type Adapter = {
   isList(object): boolean,
   isMap(object): boolean,
-  diffable(a, b): boolean,
+  equals(a, b): boolean,
   typeEquals(a, b): boolean,
+  diffable(a, b): boolean,
   each(object, iterate: Iterator);
   get(object, key): any;
   getListLength(object): number;
@@ -28,6 +29,7 @@ type DiffOptions = {
 export const defaultAdapter = {
   isList: object => Array.isArray(object),
   isMap: object => object && object.constructor === Object,
+  equals: (a, b) => a === b,
   diffable: (a, b) => true,
   typeEquals: (a, b) => typeof a === typeof b,
   each: (object, iterate) => {
@@ -92,7 +94,7 @@ const diffArray = (
   operations: Mutation[],
   options: DiffOptions
 ) => {
-  const { adapter: { each, get, getListLength }} = options;
+  const { adapter: { each, get, getListLength, equals, diffable }} = options;
   const model = [...oldArray];
   const oldListLength = getListLength(oldArray);
 
@@ -106,7 +108,7 @@ const diffArray = (
       if (used[j]) {
         return;
       }
-      if (newItem === item) {
+      if (equals(newItem, item)) {
         oldItem = item;
         used[j] = true;
         return false;
@@ -126,7 +128,7 @@ const diffArray = (
         if (k < i) {
           return;
         }
-        if (replItem === item) {
+        if (equals(replItem, item)) {
           existing = replItem;
           existingIndex = k;
           return false;
@@ -136,7 +138,7 @@ const diffArray = (
       if (existing == null) {
         model.splice(existingIndex, 1, newItem);
 
-        if (typeEquals(replItem, newItem, options) && options.adapter.diffable(replItem, newItem)) { 
+        if (typeEquals(replItem, newItem, options) && diffable(replItem, newItem)) { 
           diff2(replItem, newItem, [...path, i], operations, options);
         } else {
           operations.push(remove(i, path));

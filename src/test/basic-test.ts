@@ -38,7 +38,7 @@ describe(__filename + "#", () => {
     expect(newState.prop.value).to.eql("blarg");
   });
 
-  it("can use a custom equals option", () => {
+  it("can use a custom type equals option", () => {
     const adapter = {
       ...defaultAdapter,
       typeEquals(a, b) {
@@ -58,6 +58,9 @@ describe(__filename + "#", () => {
   it("can use a custom diffable option", () => {
     const adapter = {
       ...defaultAdapter,
+      equals(a, b) {
+        return a.id === b.id;
+      },
       diffable(a, b) {
         return a.id === b.id;
       }
@@ -71,10 +74,10 @@ describe(__filename + "#", () => {
   });
 
 
-  it("can use a custom diffable option 2", () => {
+  it("can use a custom equals option 2", () => {
     const adapter = {
       ...defaultAdapter,
-      diffable(a, b) {
+      equals(a, b) {
         return a.id === b.id;
       }
     };
