@@ -14,6 +14,7 @@ type Iterator = (value: any, key: any) => any;
 export type Adapter = {
   isList(object): boolean,
   isMap(object): boolean,
+  typeEquals(a, b): boolean,
   each(object, iterate: Iterator);
   get(object, key): any;
   getListLength(object): number;
@@ -26,6 +27,7 @@ type DiffOptions = {
 export const defaultAdapter = {
   isList: object => Array.isArray(object),
   isMap: object => object && object.constructor === Object,
+  typeEquals: (a, b) => typeof a === typeof b,
   each: (object, iterate) => {
     if (Array.isArray(object)) {
       for (let i = 0, n = object.length; i < n; i++) {
@@ -67,7 +69,7 @@ const diff2 = (
   }
 
   if (
-    !oldItem || typeof oldItem !== "object" || oldItem.constructor !== newItem.constructor)
+    !oldItem || typeof oldItem !== "object" || oldItem.constructor !== newItem.constructor || !options.adapter.typeEquals(oldItem, newItem))
    {
     if (oldItem !== newItem) {
       operations.push(replace(newItem, path));

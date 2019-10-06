@@ -19,7 +19,6 @@ describe(__filename + "#", () => {
   ].forEach(([a, b, mutationTypes]) => {
     it(`can diff & patch ${JSON.stringify(a)} to ${JSON.stringify(b)}`, () => {
       const mutations = diff(a, b);
-      console.log(mutations);
       const c = patch(a, mutations);
       expect(c).to.eql(b);
       expect(mutations.map(({ type }) => type)).to.eql(mutationTypes);

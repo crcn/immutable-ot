@@ -1,7 +1,8 @@
 import {diff} from "..";
 import {expect} from "chai";
-import { MutationType } from "../mutations";
+import { MutationType, replace } from "../mutations";
 import { patch } from "../patch";
+import { defaultAdapter } from "../diff";
 describe(__filename + "#", () => {
   it("replaces values that don't share the same constructor", () => {
 
@@ -35,5 +36,20 @@ describe(__filename + "#", () => {
     const newState = patch(state, mutations);
     expect(newState.prop.constructor).to.eql(B);
     expect(newState.prop.value).to.eql("blarg");
+  });
+
+  it("can use a custom equals option", () => {
+    const adapter = {
+      ...defaultAdapter,
+      typeEquals(a, b) {
+        return a.type === b.type;
+      }
+    };
+
+    const oldItem = [{type: "a"}];
+    const newItem = [{type: "b"}];
+
+    const mutations = diff(oldItem, newItem, { adapter });
+    expect(mutations).to.eql([replace(newItem[0], [0])])
   });
 });
