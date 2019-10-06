@@ -57,6 +57,8 @@ export const diff = (oldItem: any, newItem: any, options: DiffOptions = DEFAULT_
   return diff2(oldItem, newItem, [], [], options);
 }
 
+const typeEquals = (oldItem: any, newItem: any, options: DiffOptions) => oldItem && typeof oldItem === "object" && oldItem.constructor == newItem.constructor && options.adapter.typeEquals(oldItem, newItem)
+
 const diff2 = (
   oldItem: any,
   newItem: any,
@@ -68,9 +70,7 @@ const diff2 = (
     return operations;
   }
 
-  if (
-    !oldItem || typeof oldItem !== "object" || oldItem.constructor !== newItem.constructor || !options.adapter.typeEquals(oldItem, newItem))
-   {
+  if (!typeEquals(oldItem, newItem, options)) {
     if (oldItem !== newItem) {
       operations.push(replace(newItem, path));
     }
@@ -133,7 +133,13 @@ const diffArray = (
 
       if (existing == null) {
         model.splice(existingIndex, 1, newItem);
-        diff2(replItem, newItem, [...path, i], operations, options);
+
+        if (typeEquals(replItem, newItem, options)) { 
+          diff2(replItem, newItem, [...path, i], operations, options);
+        } else {
+          operations.push(remove(i, path));
+          operations.push(insert(i, newItem, path));
+        }
       } else {
         model.splice(i, 0, newItem);
         operations.push(insert(i, newItem, path));

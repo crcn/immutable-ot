@@ -1,6 +1,6 @@
 import {diff} from "..";
 import {expect} from "chai";
-import { MutationType, replace } from "../mutations";
+import { MutationType, replace, remove, insert } from "../mutations";
 import { patch } from "../patch";
 import { defaultAdapter } from "../diff";
 describe(__filename + "#", () => {
@@ -50,6 +50,6 @@ describe(__filename + "#", () => {
     const newItem = [{type: "b"}];
 
     const mutations = diff(oldItem, newItem, { adapter });
-    expect(mutations).to.eql([replace(newItem[0], [0])])
+    expect(mutations).to.eql([remove(0, []), insert(0, newItem[0], [])])
   });
 });
