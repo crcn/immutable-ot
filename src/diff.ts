@@ -14,6 +14,7 @@ type Iterator = (value: any, key: any) => any;
 export type Adapter = {
   isList(object): boolean,
   isMap(object): boolean,
+  diffable(a, b): boolean,
   typeEquals(a, b): boolean,
   each(object, iterate: Iterator);
   get(object, key): any;
@@ -27,6 +28,7 @@ type DiffOptions = {
 export const defaultAdapter = {
   isList: object => Array.isArray(object),
   isMap: object => object && object.constructor === Object,
+  diffable: (a, b) => true,
   typeEquals: (a, b) => typeof a === typeof b,
   each: (object, iterate) => {
     if (Array.isArray(object)) {
@@ -134,7 +136,7 @@ const diffArray = (
       if (existing == null) {
         model.splice(existingIndex, 1, newItem);
 
-        if (typeEquals(replItem, newItem, options)) { 
+        if (typeEquals(replItem, newItem, options) && options.adapter.diffable(replItem, newItem)) { 
           diff2(replItem, newItem, [...path, i], operations, options);
         } else {
           operations.push(remove(i, path));

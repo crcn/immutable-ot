@@ -1,6 +1,6 @@
 import {diff} from "..";
 import {expect} from "chai";
-import { MutationType, replace, remove, insert } from "../mutations";
+import { MutationType, replace, remove, insert, set } from "../mutations";
 import { patch } from "../patch";
 import { defaultAdapter } from "../diff";
 describe(__filename + "#", () => {
@@ -51,5 +51,38 @@ describe(__filename + "#", () => {
 
     const mutations = diff(oldItem, newItem, { adapter });
     expect(mutations).to.eql([remove(0, []), insert(0, newItem[0], [])])
+  });
+
+
+
+  it("can use a custom diffable option", () => {
+    const adapter = {
+      ...defaultAdapter,
+      diffable(a, b) {
+        return a.id === b.id;
+      }
+    };
+
+    const oldItem = [{id: "a"}];
+    const newItem = [{id: "b"}];
+
+    const mutations = diff(oldItem, newItem, { adapter });
+    expect(mutations).to.eql([remove(0, []), insert(0, newItem[0], [])])
+  });
+
+
+  it("can use a custom diffable option 2", () => {
+    const adapter = {
+      ...defaultAdapter,
+      diffable(a, b) {
+        return a.id === b.id;
+      }
+    };
+
+    const oldItem = [{id: "a", name: "b"}];
+    const newItem = [{id: "a", name: "a"}];
+
+    const mutations = diff(oldItem, newItem, { adapter });
+    expect(mutations).to.eql([set("name", "a", [0])])
   });
 });
